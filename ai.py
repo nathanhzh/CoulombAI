@@ -129,7 +129,7 @@ with tab1:
             # Calculate Profits
 
             # Display Metrics
-            st.write("hi1")
+            st.write("We are still working on the DCO Fleet feature!")
         elif fleet_type == "Contracted Fleet":
             # Calculate Costs
 
@@ -138,7 +138,7 @@ with tab1:
             # Calculate Profits
 
             # Display Metrics
-            st.write("hi2")
+            st.write("We are still working on the Contracted Fleet feature!")
 
 
     with col[1]:
