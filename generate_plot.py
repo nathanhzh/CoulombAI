@@ -34,33 +34,34 @@ def generate_plot(profits_data, payback_period):
 
     # Line chart
     lines = base.mark_line()
+    final_chart = lines
 
     # Add a labeled point at the payback period
-    payback_point = alt.Chart(pd.DataFrame({
-        "Year": [payback_period],
-        "Value": [0],
-        "Label": ["Payback Period"]
-    })).mark_point(filled=True, size=100, color="red").encode(
-        x="Year:Q",
-        y="Value:Q",
-    ) + alt.Chart(pd.DataFrame({
-        "Year": [payback_period],
-        "Value": [0],
-        "Label": ["Payback Period"]
-    })).mark_text(
-        align="left",
-        dx=-60,
-        dy=-15,
-        fontSize=12,
-        color="red"
-    ).encode(
-        x="Year:Q",
-        y="Value:Q",
-        text="Label"
-    )
-
-    # Combine the charts
-    final_chart = lines + payback_point
+    if payback_period:
+        payback_point = alt.Chart(pd.DataFrame({
+            "Year": [payback_period],
+            "Value": [0],
+            "Label": ["Payback Period"]
+        })).mark_point(filled=True, size=100, color="red").encode(
+            x="Year:Q",
+            y="Value:Q",
+        ) + alt.Chart(pd.DataFrame({
+            "Year": [payback_period],
+            "Value": [0],
+            "Label": ["Payback Period"]
+        })).mark_text(
+            align="left",
+            dx=-60,
+            dy=-15,
+            fontSize=12,
+            color="red"
+        ).encode(
+            x="Year:Q",
+            y="Value:Q",
+            text="Label"
+        )
+        # Combine charts
+        final_chart = lines + payback_point
 
     # Display the chart in Streamlit
     st.altair_chart(final_chart, use_container_width=True)

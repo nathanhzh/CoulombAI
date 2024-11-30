@@ -19,7 +19,7 @@ tab1, tab2 = st.tabs(["Metrics", "Spreadsheet"])
 # Colors = #47fff4, #9d9fff, #6d72f6, #f3d94e
 ##############################################
 
-coulomb_partner_cost = 250000
+coulomb_partner_cost = 250000 # TODO: Figure out how much initial cost to partner with coulomb is
 
 # Function to calculate annual revenue
 def get_annual_revenue(battery_issues, software_issues, hourly_delivery_2w, num_vans_2w, hourly_delivery_3w, num_vans_3w, work_hours,
@@ -54,7 +54,7 @@ with tab1:
 
     with col[0]:
         # Inputs
-        fleet_type = st.radio("Type of fleet", ["Captive Fleet", "Contracted Fleet", "DCO FLeet"])
+        fleet_type = st.radio("Type of fleet", ["Captive Fleet", "Contracted Fleet", "DCO Fleet"])
         operational_years = st.number_input("Years of operation", min_value=4, value=5)
         if fleet_type == "Captive Fleet": 
             st.markdown("##### Inputs for owning fleet")
@@ -71,8 +71,13 @@ with tab1:
             contract_cost_ev2w = st.number_input("Contract Cost - 2W (per month)(Thousands)", min_value=0, value= 1 ) 
             contract_cost_ev3w = st.number_input("Contract Cost - 3W (per month)(Thousands)", min_value=0, value= 4 )
 
-        # if fleet_type == "DCO Fleet":
-            # TODO: add any additional costs/variables necessary for DCO fleet here
+        elif fleet_type == "DCO Fleet":
+            st.markdown("##### DCO Logistics")
+            management_fee_percentage = st.number_input("Management Ownership (%)", min_value=0, max_value=100, value=90)
+            driver_share_percentage = 100 - management_fee_percentage # Driver's share of gross revenue
+            platform_operational_cost = st.number_input("Annual Platform Operational Cost (Thousands)", min_value=0, value=100) # Annual operational cost for managing the platform, such as support systems, customer service, etc.
+            training_cost_per_driver = st.number_input("Training Cost per Driver (Thousands)", min_value=0, value=5) # Cost for training each driver, covering onboarding and skill development
+            vehicle_inspection_cost = st.number_input("Annual Vehicle Inspection Cost per Vehicle (Thousands)", min_value=0, value=2) # Annual cost for regular vehicle inspections to ensure safety and compliance
 
         # Additional Logistics for all types of fleets
         basic_insurance = st.number_input("Basic Insurance (Thousands)", min_value=0, value=10)
@@ -112,7 +117,7 @@ with tab1:
             on_road_price_ev2w = vaqui_cost_ev2w - gov_subsidy_ev2w - state_incentive_ev2w
             on_road_price_ev3w = vaqui_cost_ev3w - gov_subsidy_ev3w - state_incentive_ev3w
             init_cost = (on_road_price_ev2w * num_vans_2w + on_road_price_ev3w * num_vans_3w) * 1000
-            coulomb_init_cost = init_cost + coulomb_partner_cost # TODO: Figure out how much initial cost to partner with coulomb is
+            coulomb_init_cost = init_cost + coulomb_partner_cost
 
             # Get annual revenue
             annual_revenue = get_annual_revenue(battery_issues, software_issues, hourly_delivery_2w, num_vans_2w, hourly_delivery_3w, num_vans_3w, work_hours, delivery_rev, work_days)
@@ -126,14 +131,31 @@ with tab1:
                     work_hours, work_days, annual_maintenance_cost * 0.75, battery_replacement_cost_2w * 0.75, battery_replacement_cost_3w * 0.75,
                     driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue) + basic_insurance + road_tax
         elif fleet_type == "DCO Fleet":
-            # Calculate Costs
+            # Calculate Initial Costs
+            init_cost = training_cost_per_driver * (num_vans_2w + num_vans_3w) * 1000 + vehicle_inspection_cost * (num_vans_2w + num_vans_3w) * 1000 + platform_operational_cost * 1000
+            coulomb_init_cost = init_cost + coulomb_partner_cost
 
             # Calculate Revenue
+            annual_revenue_gross = get_annual_revenue(battery_issues, software_issues, hourly_delivery_2w, num_vans_2w, hourly_delivery_3w, num_vans_3w, work_hours, delivery_rev, work_days)
+            annual_revenue = annual_revenue_gross * (management_fee_percentage / 100)   # Company revenue after driver share
+            coulomb_annual_revenue_gross = get_annual_revenue(battery_issues * 0.5, software_issues * 0.5, hourly_delivery_2w, num_vans_2w, hourly_delivery_3w, num_vans_3w, work_hours, delivery_rev, work_days)
+            coulomb_annual_revenue = coulomb_annual_revenue_gross * (management_fee_percentage / 100)  # Company revenue after driver share
 
-            # Calculate Profits
-
-            # Display Metrics
-            st.write("We are still working on the DCO Fleet feature!")
+            # Calculate Annual Cost
+            annual_costs = (
+                get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w, num_vans_3w, electricity_cost_per_km,
+                    work_hours, work_days, annual_maintenance_cost, battery_replacement_cost_2w, battery_replacement_cost_3w,
+                    driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue_gross)
+        	        + platform_operational_cost * 1000 # Platform operational cost (e.g., scheduling, system, customer service)
+                    + vehicle_inspection_cost * (num_vans_2w + num_vans_3w) * 1000  # Regular vehicle inspection cost
+            )
+            coulomb_annual_costs = (
+                get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w, num_vans_3w, electricity_cost_per_km,
+                    work_hours, work_days, annual_maintenance_cost * 0.75, battery_replacement_cost_2w * 0.75, battery_replacement_cost_3w * 0.75,
+                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue)
+                    + platform_operational_cost * 1000 # Platform operational cost (e.g., scheduling, system, customer service)
+                    + vehicle_inspection_cost * (num_vans_2w + num_vans_3w) * 1000  # Regular vehicle inspection cost
+            )
         elif fleet_type == "Contracted Fleet":
             # Cost of contracted vehicles
             on_road_price_ev2w = contract_cost_ev2w * 12 + basic_insurance + road_tax
@@ -217,12 +239,18 @@ with tab1:
         # Display Metrics
         if using_coulomb:
             st.metric(label="Return on Investment (ROI)", value=f"{coulomb_roi:.2f}%", delta=f"{coulomb_roi - 100:.2f}%", delta_color="normal")
-            st.metric(label="Payback Period (Years)", value=f"{coulomb_payback_period:.2f}", delta=f"{coulomb_payback_period - payback_period:.2f}", delta_color="inverse")
+            if payback_period:
+                st.metric(label="Payback Period (Years)", value=f"{coulomb_payback_period:.2f}", delta=f"{coulomb_payback_period - payback_period:.2f}", delta_color="inverse")
+            else:
+                st.metric(label="Payback Period (Years)", value=f"Cannot with given years of operation")
             st.metric(label="Fleet Utilization", value=f"{coulomb_fleet_utilization:,.2f}", delta=f"{coulomb_fleet_utilization - fleet_utilization:.2f}", delta_color="normal")
             st.metric(label="Cost Savings", value=f"{total_cost - coulomb_total_cost:,.2f}", delta=f"{total_cost - coulomb_total_cost:,.2f}", delta_color="normal")
         else:
             st.metric(label="Return on Investment (ROI)", value=f"{roi:.2f}%", delta=f"{roi - 100:.2f}%", delta_color="normal")
-            st.metric(label="Payback Period (Years)", value=f"{payback_period:.2f}", delta=f"{payback_period - coulomb_payback_period:.2f}", delta_color="inverse")
+            if payback_period:
+                st.metric(label="Payback Period (Years)", value=f"{payback_period:.2f}", delta=f"{payback_period - coulomb_payback_period:.2f}", delta_color="inverse")
+            else:
+                st.metric(label="Payback Period (Years)", value=f"Cannot with given years of operation")
             st.metric(label="Fleet Utilization", value=f"{fleet_utilization:,.2f}", delta=f"{fleet_utilization - coulomb_fleet_utilization:.2f}", delta_color="normal")
             st.metric(label="Cost Savings", value=f"0", delta=f"{coulomb_total_cost - total_cost:,.2f}", delta_color="normal")
 
@@ -255,4 +283,5 @@ with tab2:
     st.text("We also provide a tab for sunk costs, including additional information for different types of fleets.")
     st.text("We provide clear references for our number estimations in the references tab.")
     st.text("As of now, our spreadsheet only models the first 5 years. However, the Metrics tab allows for more variability for inputs and logistics.")
-    st.text("Here is the link to the spreadsheet: https://docs.google.com/spreadsheets/d/1o2Z9GmpwzgQJ2hTYIkDM3LvWJkwGQQFH7ETarsZGHK4/edit?usp=sharing")
+    url = "https://docs.google.com/spreadsheets/d/1o2Z9GmpwzgQJ2hTYIkDM3LvWJkwGQQFH7ETarsZGHK4/edit?usp=sharing"
+    st.markdown("Here is the [link to the spreadsheet](%s)" % url)
