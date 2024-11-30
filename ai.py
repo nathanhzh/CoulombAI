@@ -19,8 +19,9 @@ tab1, tab2, tab3 = st.tabs(["ROI Calculation", "Revenue", "Other"])
 # Colors = #47fff4, #9d9fff, #6d72f6, #f3d94e
 ##############################################
 
-coulomb_partner_cost = 50000
+coulomb_partner_cost = 250000
 
+# Function to calculate annual revenue
 def get_annual_revenue(battery_issues, software_issues, hourly_delivery_2w, num_vans_2w, hourly_delivery_3w, num_vans_3w, work_hours,
                         delivery_rev, work_days):
     missed_deliveries_percentage = (battery_issues + software_issues) / 100 # Lost Revenue
@@ -31,6 +32,7 @@ def get_annual_revenue(battery_issues, software_issues, hourly_delivery_2w, num_
     )
     return annual_revenue
 
+# Function to calculate annual cost
 def get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost, battery_replacement_cost_2w, battery_replacement_cost_3w,
                     driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue):
@@ -58,15 +60,19 @@ with tab1:
             st.markdown("##### Inputs for owning fleet")
             vaqui_cost_ev2w = st.number_input("Vehicle Acquisition - 2W (Thousands)", min_value=0, value=80)
             vaqui_cost_ev3w = st.number_input("Vehicle Acquisition - 3W (Thousands)", min_value=0, value=335)
+            gov_subsidy_ev2w = st.number_input("Government Subsidy - 2W (Thousands)", min_value=0, value=15)
+            gov_subsidy_ev3w = st.number_input("Government Subsidy - 3W (Thousands)", min_value=0, value=10)
+            state_incentive_ev2w = st.number_input("State-level Incentive - 2W (Thousands)", min_value=0, value=30)
+            state_incentive_ev3w = st.number_input("State-level Incentive - 3W (Thousands)", min_value=0, value=30)
         elif fleet_type == "Contracted Fleet":
             st.markdown("##### Contract Logistics")
             contract_period = st.number_input("Contract Period (Months)", min_value=0, value= operational_years * 12)
             contract_cost_ev2w = st.number_input("Contract Cost - 2W (per month)(Thousands)", min_value=0, value= 1 ) 
             contract_cost_ev3w = st.number_input("Contract Cost - 3W (per month)(Thousands)", min_value=0, value= 4 )
-            basic_insurance = st.number_input("Basic Insurance (Thousands)", min_value=0, value=10)
-            road_tax = st.number_input("Road Tax (Thousands)", min_value=0, value=15)
         # if fleet_type == "DCO Fleet":
             # TODO: add any additional costs/variables necessary for DCO fleet here
+        basic_insurance = st.number_input("Basic Insurance (Thousands)", min_value=0, value=10)
+        road_tax = st.number_input("Road Tax (Thousands)", min_value=0, value=15)
         annual_maintenance_cost = st.number_input("Annual Maintenance/Van (Thousands)", min_value=0, value=14)
         battery_replacement_cost_2w = st.number_input("Annual Battery Replacement - 2W (Thousands)", min_value=0, value=2)
         battery_replacement_cost_3w = st.number_input("Annual Battery Replacement - 3W (Thousands)", min_value=0, value=10)
@@ -95,25 +101,26 @@ with tab1:
         software_issues = st.number_input("Percentage of software problems", min_value=0, max_value=100, value=6)
 
     with col[2]:
-        using_coulomb = st.toggle("Using Coulomb", value=True)
         # Calculating costs
         if fleet_type == "Captive Fleet":
             # st.metric(label="Revenue", value=Revenue, delta="_", delta_color="normal")
             # Cost of new vehicles
-            init_cost = (vaqui_cost_ev2w * num_vans_2w + vaqui_cost_ev3w * num_vans_3w) * 1000
+            on_road_price_ev2w = vaqui_cost_ev2w - gov_subsidy_ev2w - state_incentive_ev2w
+            on_road_price_ev3w = vaqui_cost_ev3w - gov_subsidy_ev3w - state_incentive_ev3w
+            init_cost = (on_road_price_ev2w * num_vans_2w + on_road_price_ev3w * num_vans_3w) * 1000
             coulomb_init_cost = init_cost + coulomb_partner_cost # TODO: Figure out how much initial cost to partner with coulomb is
 
-            # Calculate total revenue accounting for missed_deliveries
+            # Get annual revenue
             annual_revenue = get_annual_revenue(battery_issues, software_issues, hourly_delivery_2w, num_vans_2w, hourly_delivery_3w, num_vans_3w, work_hours, delivery_rev, work_days)
             coulomb_annual_revenue = get_annual_revenue(battery_issues * 0.5, software_issues * 0.5, hourly_delivery_2w, num_vans_2w, hourly_delivery_3w, num_vans_3w, work_hours, delivery_rev, work_days)
 
-            # Calculate costs
+            # Get annual costs
             annual_costs = get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost, battery_replacement_cost_2w, battery_replacement_cost_3w,
-                    driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue)
+                    driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue) + basic_insurance + road_tax
             coulomb_annual_costs = get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost * 0.75, battery_replacement_cost_2w * 0.75, battery_replacement_cost_3w * 0.75,
-                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue)
+                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue) + basic_insurance + road_tax
         elif fleet_type == "DCO Fleet":
             # Calculate Costs
 
@@ -125,8 +132,8 @@ with tab1:
             st.write("We are still working on the DCO Fleet feature!")
         elif fleet_type == "Contracted Fleet":
             # Cost of contracted vehicles
-            on_road_price_ev2w = contract_cost_ev2w + basic_insurance + road_tax
-            on_road_price_ev3w = contract_cost_ev3w + basic_insurance + road_tax
+            on_road_price_ev2w = contract_cost_ev2w * 12 + basic_insurance + road_tax
+            on_road_price_ev3w = contract_cost_ev3w * 12 + basic_insurance + road_tax
             init_cost = (on_road_price_ev2w * num_vans_2w + on_road_price_ev3w * num_vans_3w) * 1000
             coulomb_init_cost = init_cost + coulomb_partner_cost
 
@@ -137,11 +144,12 @@ with tab1:
             # Calculate costs
             annual_costs = get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost, battery_replacement_cost_2w, battery_replacement_cost_3w,
-                    driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue)
+                    driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue) + init_cost
             coulomb_annual_costs = get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost * 0.75, battery_replacement_cost_2w * 0.75, battery_replacement_cost_3w * 0.75,
-                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue)
+                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue) + init_cost
 
+        # Calculating data for revenue, costs, profits, and payback_period
         years = list(range(operational_years + 1))
         revenues = [0]
         costs = [init_cost]
@@ -196,11 +204,12 @@ with tab1:
 
         # Fleet utilization
         total_possible_hours = 8 * 300
-        total_hours = work_hours * work_days * (1 - (battery_issues +software_issues) / 100)
+        total_hours = work_hours * work_days * (1 - (battery_issues + software_issues) / 100)
         coulomb_total_hours = work_hours * work_days * (1 - (battery_issues + software_issues) * 0.5 / 100)
         fleet_utilization = total_hours / total_possible_hours
         coulomb_fleet_utilization = coulomb_total_hours / total_possible_hours
 
+        using_coulomb = st.toggle("Using Coulomb", value=True)
         # Display Metrics
         if using_coulomb:
             st.metric(label="Return on Investment (ROI)", value=f"{coulomb_roi:.2f}%", delta=f"{coulomb_roi - 100:.2f}%", delta_color="normal")
