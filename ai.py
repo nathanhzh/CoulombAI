@@ -12,7 +12,7 @@ st.set_page_config(
 alt.themes.enable("dark")
 # --------------
 
-tab1, tab2, tab3 = st.tabs(["ROI Calculation", "Revenue", "Other"])
+tab1, tab2 = st.tabs(["Metrics", "Spreadsheet"])
 
 ################## Notes #####################
 
@@ -64,13 +64,17 @@ with tab1:
             gov_subsidy_ev3w = st.number_input("Government Subsidy - 3W (Thousands)", min_value=0, value=10)
             state_incentive_ev2w = st.number_input("State-level Incentive - 2W (Thousands)", min_value=0, value=30)
             state_incentive_ev3w = st.number_input("State-level Incentive - 3W (Thousands)", min_value=0, value=30)
+
         elif fleet_type == "Contracted Fleet":
             st.markdown("##### Contract Logistics")
             contract_period = st.number_input("Contract Period (Months)", min_value=0, value= operational_years * 12)
             contract_cost_ev2w = st.number_input("Contract Cost - 2W (per month)(Thousands)", min_value=0, value= 1 ) 
             contract_cost_ev3w = st.number_input("Contract Cost - 3W (per month)(Thousands)", min_value=0, value= 4 )
+
         # if fleet_type == "DCO Fleet":
             # TODO: add any additional costs/variables necessary for DCO fleet here
+
+        # Additional Logistics for all types of fleets
         basic_insurance = st.number_input("Basic Insurance (Thousands)", min_value=0, value=10)
         road_tax = st.number_input("Road Tax (Thousands)", min_value=0, value=15)
         annual_maintenance_cost = st.number_input("Annual Maintenance/Van (Thousands)", min_value=0, value=14)
@@ -242,3 +246,13 @@ with tab1:
         st.text("Below, you can see the cumulative net profits if you were using Coulomb")
         st.markdown("### Cumulative Net Profits w/Coulomb")
         generate_plot(coulomb_profits_data, coulomb_payback_period)
+
+with tab2:
+    st.markdown("### Spreadsheet")
+    st.text("Here is our spreadsheet of the costs and calculations.")
+    st.text("In each tab on the bottom, you can manipulate the inputs for a given year to change see how cost, revenue, and profits will change.")
+    st.text("On the Yearly Revenue tab, all operational inputs and downtime costs are displayed. We assume the values will not change over the years.")
+    st.text("We also provide a tab for sunk costs, including additional information for different types of fleets.")
+    st.text("We provide clear references for our number estimations in the references tab.")
+    st.text("As of now, our spreadsheet only models the first 5 years. However, the Metrics tab allows for more variability for inputs and logistics.")
+    st.text("Here is the link to the spreadsheet: https://docs.google.com/spreadsheets/d/1o2Z9GmpwzgQJ2hTYIkDM3LvWJkwGQQFH7ETarsZGHK4/edit?usp=sharing")
