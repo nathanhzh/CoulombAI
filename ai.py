@@ -82,7 +82,6 @@ with tab1:
         # Additional Logistics for all types of fleets
         basic_insurance_2w = st.number_input("Basic Insurance (Thousands)", min_value=0, value=5)
         basic_insurance_3w = st.number_input("Basic Insurance (Thousands)", min_value=0, value=15)
-        road_tax = st.number_input("Road Tax (Thousands)", min_value=0, value=15)
         annual_maintenance_cost = st.number_input("Annual Maintenance/Van (Thousands)", min_value=0, value=14)
         battery_replacement_cost_2w = st.number_input("Annual Battery Replacement - 2W (Thousands)", min_value=0, value=2)
         battery_replacement_cost_3w = st.number_input("Annual Battery Replacement - 3W (Thousands)", min_value=0, value=10)
@@ -127,10 +126,10 @@ with tab1:
             # Get annual costs
             annual_costs = get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost, battery_replacement_cost_2w, battery_replacement_cost_3w,
-                    driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue) + basic_insurance_2w + basic_insurance_3w + road_tax
+                    driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue) + basic_insurance_2w + basic_insurance_3w
             coulomb_annual_costs = get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost * 0.75, battery_replacement_cost_2w * 0.75, battery_replacement_cost_3w * 0.75,
-                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue) + basic_insurance_2w + basic_insurance_3w + road_tax
+                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue) + basic_insurance_2w + basic_insurance_3w
         elif fleet_type == "DCO Fleet":
             # Calculate Initial Costs
             init_cost = training_cost_per_driver * (num_vans_2w + num_vans_3w) * 1000 + vehicle_inspection_cost * (num_vans_2w + num_vans_3w) * 1000 + platform_operational_cost * 1000
@@ -159,8 +158,8 @@ with tab1:
             )
         elif fleet_type == "Contracted Fleet":
             # Cost of contracted vehicles
-            on_road_price_ev2w = contract_cost_ev2w * 12 + basic_insurance_2w + road_tax
-            on_road_price_ev3w = contract_cost_ev3w * 12 + basic_insurance_3w + road_tax
+            on_road_price_ev2w = contract_cost_ev2w * 12 + basic_insurance_2w
+            on_road_price_ev3w = contract_cost_ev3w * 12 + basic_insurance_3w
             init_cost = (on_road_price_ev2w * num_vans_2w + on_road_price_ev3w * num_vans_3w) * 1000
             coulomb_init_cost = init_cost + coulomb_partner_cost
 
