@@ -80,7 +80,7 @@ with tab1:
             vehicle_inspection_cost = st.number_input("Annual Vehicle Inspection Cost per Vehicle (Thousands)", min_value=0, value=2) # Annual cost for regular vehicle inspections to ensure safety and compliance
 
         # Additional Logistics for all types of fleets
-        basic_insurance_2w = st.number_input("Basic Insurance (Thousands)", min_value=0, value=5)
+        basic_insurance_2w = st.number_input("Basic Insurance (Thousands)", min_value=0, value=4)
         basic_insurance_3w = st.number_input("Basic Insurance (Thousands)", min_value=0, value=15)
         annual_maintenance_cost = st.number_input("Annual Maintenance/Van (Thousands)", min_value=0, value=14)
         battery_replacement_cost_2w = st.number_input("Annual Battery Replacement - 2W (Thousands)", min_value=0, value=2)
