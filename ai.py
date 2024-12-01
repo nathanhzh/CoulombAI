@@ -101,7 +101,7 @@ with tab1:
         driver_wage_2w = st.number_input("Hourly Driver Wage - 2W", min_value=0, value=87)
         driver_wage_3w = st.number_input("Hourly Driver Wage - 3W", min_value=0, value=107)
         hourly_delivery_2w = st.number_input("Deliveries per Hour - 2W", min_value=0, value=3)
-        hourly_delivery_3w = st.number_input("Deliveries per Hour - 3W", min_value=0, value=5)
+        hourly_delivery_3w = st.number_input("Deliveries per Hour - 3W", min_value=0, value=6)
         work_hours = st.number_input("Work hours per day", min_value=0, value=8)
         work_days = st.number_input("Work days per year", min_value=0, value=300)
 
