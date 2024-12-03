@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-def generate_plot(profits_data, payback_period):
+def generate_plot(profits_data, payback_period, units):
     melted_data = profits_data.melt(id_vars=["Year"], var_name="Metric", value_name="Value")
 
     # Create base chart
@@ -14,12 +14,12 @@ def generate_plot(profits_data, payback_period):
         ),
         y=alt.Y(
             "Value:Q",
-            axis=alt.Axis(title="Value (Thousands)", grid=True),
+            axis=alt.Axis(title=f"Value ({units})", grid=True),
         ),
         color=alt.Color(
             "Metric:N",
             scale=alt.Scale(
-                domain=["Revenue (Thousands)", "Cost (Thousands)", "Cumulative Profit (Thousands)"],
+                domain=["Revenue", "Cost", "Cumulative Profit"],
                 range=["#9d9fff", "#f3d94e", "#6d72f6"]
             ),
             title="Metric",
