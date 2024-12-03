@@ -14,12 +14,12 @@ def generate_plot(profits_data, payback_period):
         ),
         y=alt.Y(
             "Value:Q",
-            axis=alt.Axis(title="Value (Thousands)", grid=True),
+            axis=alt.Axis(title="Value", grid=True),
         ),
         color=alt.Color(
             "Metric:N",
             scale=alt.Scale(
-                domain=["Revenue (Thousands)", "Cost (Thousands)", "Cumulative Profit (Thousands)"],
+                domain=["Revenue", "Cost", "Cumulative Profit"],
                 range=["#9d9fff", "#f3d94e", "#6d72f6"]
             ),
             title="Metric",

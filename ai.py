@@ -19,7 +19,7 @@ tab1, tab2 = st.tabs(["Metrics", "Spreadsheet"])
 # Colors = #47fff4, #9d9fff, #6d72f6, #f3d94e
 ##############################################
 
-coulomb_partner_cost = 1800 # TODO: Figure out how much initial cost to partner with coulomb is
+coulomb_partner_cost = 1800
 
 # Function to calculate annual revenue
 def get_annual_revenue(battery_issues, software_issues, hourly_delivery_2w, num_vans_2w, hourly_delivery_3w, num_vans_3w, work_hours,
