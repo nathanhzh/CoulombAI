@@ -19,7 +19,7 @@ tab1, tab2 = st.tabs(["Metrics", "Spreadsheet"])
 # Colors = #47fff4, #9d9fff, #6d72f6, #f3d94e
 ##############################################
 
-coulomb_partner_cost = 250000 # TODO: Figure out how much initial cost to partner with coulomb is
+coulomb_partner_cost = 1800 # TODO: Figure out how much initial cost to partner with coulomb is
 
 # Function to calculate annual revenue
 def get_annual_revenue(battery_issues, software_issues, hourly_delivery_2w, num_vans_2w, hourly_delivery_3w, num_vans_3w, work_hours,
@@ -55,7 +55,7 @@ with tab1:
     with col[0]:
         # Inputs
         fleet_type = st.radio("Type of fleet", ["Captive Fleet", "Contracted Fleet", "DCO Fleet"])
-        operational_years = st.number_input("Years of operation", min_value=4, value=5)
+        operational_years = st.number_input("Years of operation", min_value=1, value=5)
         if fleet_type == "Captive Fleet": 
             st.markdown("##### Inputs for owning fleet")
             vaqui_cost_ev2w = st.number_input("Vehicle Acquisition - 2W (Thousands)", min_value=0, value=80)
@@ -77,11 +77,11 @@ with tab1:
             driver_share_percentage = 100 - management_fee_percentage # Driver's share of gross revenue
             platform_operational_cost = st.number_input("Annual Platform Operational Cost (Thousands)", min_value=0, value=100) # Annual operational cost for managing the platform, such as support systems, customer service, etc.
             training_cost_per_driver = st.number_input("Training Cost per Driver (Thousands)", min_value=0, value=5) # Cost for training each driver, covering onboarding and skill development
-            vehicle_inspection_cost = st.number_input("Annual Vehicle Inspection Cost per Vehicle (Thousands)", min_value=0, value=2) # Annual cost for regular vehicle inspections to ensure safety and compliance
+            vehicle_inspection_cost = st.number_input("Annual Vehicle Inspection Cost per Vehicle (Thousands)", min_value=0, value=1) # Annual cost for regular vehicle inspections to ensure safety and compliance
 
         # Additional Logistics for all types of fleets
-        basic_insurance_2w = st.number_input("Basic Insurance (Thousands)", min_value=0, value=5)
-        basic_insurance_3w = st.number_input("Basic Insurance (Thousands)", min_value=0, value=15)
+        basic_insurance_2w = st.number_input("Basic Insurance - 2W (Thousands)", min_value=0, value=5)
+        basic_insurance_3w = st.number_input("Basic Insurance - 3W (Thousands)", min_value=0, value=15)
         annual_maintenance_cost = st.number_input("Annual Maintenance/Van (Thousands)", min_value=0, value=14)
         battery_replacement_cost_2w = st.number_input("Annual Battery Replacement - 2W (Thousands)", min_value=0, value=2)
         battery_replacement_cost_3w = st.number_input("Annual Battery Replacement - 3W (Thousands)", min_value=0, value=10)
@@ -106,8 +106,8 @@ with tab1:
 
         # Downtime costs/percentages
         st.markdown("##### Downtime Percentages")
-        battery_issues = st.number_input("Percentage of battery problems", min_value=0, max_value=100, value=5)
-        software_issues = st.number_input("Percentage of software problems", min_value=0, max_value=100, value=6)
+        battery_issues = st.number_input("Percentage of battery problems faced per year", min_value=0, max_value=100, value=5)
+        software_issues = st.number_input("Percentage of software problems faced per year", min_value=0, max_value=100, value=6)
 
     with col[2]:
         # Calculating costs
@@ -117,7 +117,7 @@ with tab1:
             on_road_price_ev2w = vaqui_cost_ev2w - gov_subsidy_ev2w - state_incentive_ev2w
             on_road_price_ev3w = vaqui_cost_ev3w - gov_subsidy_ev3w - state_incentive_ev3w
             init_cost = (on_road_price_ev2w * num_vans_2w + on_road_price_ev3w * num_vans_3w) * 1000
-            coulomb_init_cost = init_cost + coulomb_partner_cost
+            coulomb_init_cost = init_cost
 
             # Get annual revenue
             annual_revenue = get_annual_revenue(battery_issues, software_issues, hourly_delivery_2w, num_vans_2w, hourly_delivery_3w, num_vans_3w, work_hours, delivery_rev, work_days)
@@ -129,11 +129,12 @@ with tab1:
                     driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue) + basic_insurance_2w + basic_insurance_3w
             coulomb_annual_costs = get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost * 0.75, battery_replacement_cost_2w * 0.75, battery_replacement_cost_3w * 0.75,
-                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue) + basic_insurance_2w + basic_insurance_3w
+                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue) + basic_insurance_2w + basic_insurance_3w +
+                    coulomb_partner_cost * (num_vans_2w + num_vans_3w)
         elif fleet_type == "DCO Fleet":
             # Calculate Initial Costs
             init_cost = training_cost_per_driver * (num_vans_2w + num_vans_3w) * 1000 + vehicle_inspection_cost * (num_vans_2w + num_vans_3w) * 1000 + platform_operational_cost * 1000
-            coulomb_init_cost = init_cost + coulomb_partner_cost
+            coulomb_init_cost = init_cost
 
             # Calculate Revenue
             annual_revenue_gross = get_annual_revenue(battery_issues, software_issues, hourly_delivery_2w, num_vans_2w, hourly_delivery_3w, num_vans_3w, work_hours, delivery_rev, work_days)
@@ -155,13 +156,14 @@ with tab1:
                     driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue)
                     + platform_operational_cost * 1000 # Platform operational cost (e.g., scheduling, system, customer service)
                     + vehicle_inspection_cost * (num_vans_2w + num_vans_3w) * 1000  # Regular vehicle inspection cost
+                    + coulomb_partner_cost * (num_vans_2w + num_vans_3w)
             )
         elif fleet_type == "Contracted Fleet":
             # Cost of contracted vehicles
             on_road_price_ev2w = contract_cost_ev2w * 12 + basic_insurance_2w
             on_road_price_ev3w = contract_cost_ev3w * 12 + basic_insurance_3w
             init_cost = (on_road_price_ev2w * num_vans_2w + on_road_price_ev3w * num_vans_3w) * 1000
-            coulomb_init_cost = init_cost + coulomb_partner_cost
+            coulomb_init_cost = init_cost
 
             # Calculate total revenue accounting for missed_deliveries
             annual_revenue = get_annual_revenue(battery_issues, software_issues, hourly_delivery_2w, num_vans_2w, hourly_delivery_3w, num_vans_3w, work_hours, delivery_rev, work_days)
@@ -173,7 +175,8 @@ with tab1:
                     driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue) + init_cost
             coulomb_annual_costs = get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost * 0.75, battery_replacement_cost_2w * 0.75, battery_replacement_cost_3w * 0.75,
-                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue) + init_cost
+                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue) + init_cost +
+                    coulomb_partner_cost * (num_vans_2w + num_vans_3w)
 
         # Calculating data for revenue, costs, profits, and payback_period
         years = list(range(operational_years + 1))
@@ -207,15 +210,15 @@ with tab1:
         # Create DataFrame
         profits_data = pd.DataFrame({
             "Year": range(0, operational_years + 1),
-            "Revenue (Thousands)": revenues,
-            "Cost (Thousands)": costs,
-            "Cumulative Profit (Thousands)": profits,
+            "Revenue": revenues,
+            "Cost": costs,
+            "Cumulative Profit": profits,
         })
         coulomb_profits_data = pd.DataFrame({
             "Year": range(0, operational_years + 1),
-            "Revenue (Thousands)": coulomb_revenues,
-            "Cost (Thousands)": coulomb_costs,
-            "Cumulative Profit (Thousands)": coulomb_profits,
+            "Revenue": coulomb_revenues,
+            "Cost": coulomb_costs,
+            "Cumulative Profit": coulomb_profits,
         })
 
         # Calculate ROI
