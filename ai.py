@@ -12,14 +12,51 @@ st.set_page_config(
 alt.themes.enable("dark")
 # --------------
 
-tab1, tab2 = st.tabs(["Metrics", "Spreadsheet"])
+tab1, tab2 = st.tabs(["Metrics", "Other"])
 
 ################## Notes #####################
 
 # Colors = #47fff4, #9d9fff, #6d72f6, #f3d94e
 ##############################################
 
-coulomb_partner_cost = 1800
+conversion_rate = 82
+
+if "currency" not in st.session_state:
+    st.session_state.currency = "₹"
+if "inputs" not in st.session_state:
+    # Default values
+    st.session_state.inputs = {
+        "coulomb_partner_cost": 1800,
+        "vaqui_cost_ev2w": 80 * 1000,
+        "vaqui_cost_ev3w": 335 * 1000,
+        "gov_subsidy_ev2w": 15 * 1000,
+        "gov_subsidy_ev3w": 10 * 1000,
+        "state_incentive_ev2w": 30 * 1000,
+        "state_incentive_ev3w": 30 * 1000,
+        "contract_cost_ev2w": 1 * 1000,
+        "contract_cost_ev3w": 4 * 1000,
+        "platform_operational_cost": 100 * 1000,
+        "training_cost_per_driver": 5 * 1000,
+        "vehicle_inspection_cost": 1 * 1000,
+        "basic_insurance_2w": 5 * 1000,
+        "basic_insurance_3w": 15 * 1000,
+        "annual_maintenance_cost": 14 * 1000,
+        "battery_replacement_cost_2w": 2 * 1000,
+        "battery_replacement_cost_3w": 10 * 1000,
+        "electricity_cost_per_km": 2.58,
+        "delivery_rev": 50.0,
+        "driver_wage_2w": 87.0,
+        "driver_wage_3w": 107.0
+    }
+
+# Function to convert values between currencies
+def convert_currency(value, from_currency, to_currency):
+    if from_currency == to_currency:
+        return value
+    if from_currency == "₹" and to_currency == "$":
+        return value / conversion_rate
+    if from_currency == "$" and to_currency == "₹":
+        return value * conversion_rate
 
 # Function to calculate annual revenue
 def get_annual_revenue(battery_issues, software_issues, hourly_delivery_2w, num_vans_2w, hourly_delivery_3w, num_vans_3w, work_hours,
@@ -40,9 +77,9 @@ def get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w,
                 (daily_average_miles_2w * num_vans_2w + daily_average_miles_3w * num_vans_3w)
                 * electricity_cost_per_km
                 * work_days # Annual Electricity Cost
-                + annual_maintenance_cost * (num_vans_2w + num_vans_3w) * 1000 # Annual Maintenance Cost
-                + battery_replacement_cost_2w * num_vans_2w * 1000
-                + battery_replacement_cost_3w * num_vans_3w * 1000 # Annual Battery Cost
+                + annual_maintenance_cost * (num_vans_2w + num_vans_3w) # Annual Maintenance Cost
+                + battery_replacement_cost_2w * num_vans_2w
+                + battery_replacement_cost_3w * num_vans_3w # Annual Battery Cost
                 + driver_wage_2w * work_hours * work_days * num_vans_2w
                 + driver_wage_3w * work_hours * work_days * num_vans_3w # Annual Driver Cost
                 + (battery_issues + software_issues) / 100 * annual_revenue # Software + Battery Maintenance Costs
@@ -53,52 +90,82 @@ with tab1:
     col = st.columns((1.7, 4.5, 1.8), gap='medium')
 
     with col[0]:
+        new_currency = st.selectbox("What kind of currency unit?", ["₹", "$"], index=0 if st.session_state.currency == "₹" else 1)
+
+        # If currency changes, convert all stored input values
+        if new_currency != st.session_state.currency:
+            for key, value in st.session_state.inputs.items():
+                st.session_state.inputs[key] = convert_currency(value, st.session_state.currency, new_currency)
+            st.session_state.currency = new_currency
+        coulomb_partner_cost = st.session_state.inputs["coulomb_partner_cost"]
+        
         # Inputs
         fleet_type = st.radio("Type of fleet", ["Captive Fleet", "Contracted Fleet", "DCO Fleet"])
         operational_years = st.number_input("Years of operation", min_value=1, value=5)
+        # Inputs specific for type of fleet
         if fleet_type == "Captive Fleet": 
             st.markdown("##### Inputs for owning fleet")
-            vaqui_cost_ev2w = st.number_input("Vehicle Acquisition - 2W (Thousands)", min_value=0, value=80)
-            vaqui_cost_ev3w = st.number_input("Vehicle Acquisition - 3W (Thousands)", min_value=0, value=335)
-            gov_subsidy_ev2w = st.number_input("Government Subsidy - 2W (Thousands)", min_value=0, value=15)
-            gov_subsidy_ev3w = st.number_input("Government Subsidy - 3W (Thousands)", min_value=0, value=10)
-            state_incentive_ev2w = st.number_input("State-level Incentive - 2W (Thousands)", min_value=0, value=30)
-            state_incentive_ev3w = st.number_input("State-level Incentive - 3W (Thousands)", min_value=0, value=30)
+            vaqui_cost_ev2w = st.number_input("Vehicle Acquisition - 2W (Thousands)", min_value=0.0, value=st.session_state.inputs["vaqui_cost_ev2w"] / 1000) * 1000
+            st.session_state.inputs["vaqui_cost_ev2w"] = vaqui_cost_ev2w
+            vaqui_cost_ev3w = st.number_input("Vehicle Acquisition - 3W (Thousands)", min_value=0.0, value=st.session_state.inputs["vaqui_cost_ev3w"] / 1000) * 1000
+            st.session_state.inputs["vaqui_cost_ev3w"] = vaqui_cost_ev3w
+            gov_subsidy_ev2w = st.number_input("Government Subsidy - 2W (Thousands)", min_value=0.0, value=st.session_state.inputs["gov_subsidy_ev2w"] / 1000) * 1000
+            st.session_state.inputs["gov_subsidy_ev2w"] = gov_subsidy_ev2w
+            gov_subsidy_ev3w = st.number_input("Government Subsidy - 3W (Thousands)", min_value=0.0, value=st.session_state.inputs["gov_subsidy_ev3w"] / 1000) * 1000
+            st.session_state.inputs["gov_subsidy_ev3w"] = gov_subsidy_ev3w
+            state_incentive_ev2w = st.number_input("State-level Incentive - 2W (Thousands)", min_value=0.0, value=st.session_state.inputs["state_incentive_ev2w"] / 1000) * 1000
+            st.session_state.inputs["state_incentive_ev2w"] = state_incentive_ev2w
+            state_incentive_ev3w = st.number_input("State-level Incentive - 3W (Thousands)", min_value=0.0, value=st.session_state.inputs["state_incentive_ev3w"] / 1000) * 1000
+            st.session_state.inputs["state_incentive_ev3w"] = state_incentive_ev3w
 
         elif fleet_type == "Contracted Fleet":
             st.markdown("##### Contract Logistics")
             contract_period = st.number_input("Contract Period (Months)", min_value=0, value= operational_years * 12)
-            contract_cost_ev2w = st.number_input("Contract Cost - 2W (per month)(Thousands)", min_value=0, value= 1 ) 
-            contract_cost_ev3w = st.number_input("Contract Cost - 3W (per month)(Thousands)", min_value=0, value= 4 )
+            contract_cost_ev2w = st.number_input("Contract Cost - 2W (per month)(Thousands)", min_value=0.0, value=st.session_state.inputs["contract_cost_ev2w"] / 1000) * 1000
+            st.session_state.inputs["contract_cost_ev2w"] = contract_cost_ev2w
+            contract_cost_ev3w = st.number_input("Contract Cost - 3W (per month)(Thousands)", min_value=0.0, value=st.session_state.inputs["contract_cost_ev3w"] / 1000) * 1000
+            st.session_state.inputs["contract_cost_ev3w"] = contract_cost_ev3w
 
         elif fleet_type == "DCO Fleet":
             st.markdown("##### DCO Logistics")
             management_fee_percentage = st.number_input("Management Ownership (%)", min_value=0, max_value=100, value=90)
             driver_share_percentage = 100 - management_fee_percentage # Driver's share of gross revenue
-            platform_operational_cost = st.number_input("Annual Platform Operational Cost (Thousands)", min_value=0, value=100) # Annual operational cost for managing the platform, such as support systems, customer service, etc.
-            training_cost_per_driver = st.number_input("Training Cost per Driver (Thousands)", min_value=0, value=5) # Cost for training each driver, covering onboarding and skill development
-            vehicle_inspection_cost = st.number_input("Annual Vehicle Inspection Cost per Vehicle (Thousands)", min_value=0, value=1) # Annual cost for regular vehicle inspections to ensure safety and compliance
+            platform_operational_cost = st.number_input("Annual Platform Operational Cost (Thousands)", min_value=0.0, value=st.session_state.inputs["platform_operational_cost"] / 1000) * 1000 # Annual operational cost for managing the platform, such as support systems, customer service, etc.
+            st.session_state.inputs["platform_operational_cost"] = platform_operational_cost
+            training_cost_per_driver = st.number_input("Training Cost per Driver (Thousands)", min_value=0.0, value=st.session_state.inputs["training_cost_per_driver"] / 1000) * 1000 # Cost for training each driver, covering onboarding and skill development
+            st.session_state.inputs["training_cost_per_driver"] = training_cost_per_driver
+            vehicle_inspection_cost = st.number_input("Annual Vehicle Inspection Cost per Vehicle (Thousands)", min_value=0.0, value=st.session_state.inputs["vehicle_inspection_cost"] / 1000) * 1000 # Annual cost for regular vehicle inspections to ensure safety and compliance
+            st.session_state.inputs["vehicle_inspection_cost"] = vehicle_inspection_cost
 
-        # Additional Logistics for all types of fleets
-        basic_insurance_2w = st.number_input("Basic Insurance - 2W (Thousands)", min_value=0, value=5)
-        basic_insurance_3w = st.number_input("Basic Insurance - 3W (Thousands)", min_value=0, value=15)
-        annual_maintenance_cost = st.number_input("Annual Maintenance/Van (Thousands)", min_value=0, value=14)
-        battery_replacement_cost_2w = st.number_input("Annual Battery Replacement - 2W (Thousands)", min_value=0, value=2)
-        battery_replacement_cost_3w = st.number_input("Annual Battery Replacement - 3W (Thousands)", min_value=0, value=10)
+        # Additional Logistics consistent across all types of fleets
+        basic_insurance_2w = st.number_input("Basic Insurance - 2W (Thousands)", min_value=0.0, value=st.session_state.inputs["basic_insurance_2w"] / 1000) * 1000
+        st.session_state.inputs["basic_insurance_2w"] = basic_insurance_2w
+        basic_insurance_3w = st.number_input("Basic Insurance - 3W (Thousands)", min_value=0.0, value=st.session_state.inputs["basic_insurance_3w"] / 1000) * 1000
+        st.session_state.inputs["basic_insurance_3w"] = basic_insurance_3w
+        annual_maintenance_cost = st.number_input("Annual Maintenance/Van (Thousands)", min_value=0.0, value=st.session_state.inputs["annual_maintenance_cost"] / 1000) * 1000
+        st.session_state.inputs["annual_maintenance_cost"] = annual_maintenance_cost
+        battery_replacement_cost_2w = st.number_input("Annual Battery Replacement - 2W (Thousands)", min_value=0.0, value=st.session_state.inputs["battery_replacement_cost_2w"] / 1000) * 1000
+        st.session_state.inputs["battery_replacement_cost_2w"] = battery_replacement_cost_2w
+        battery_replacement_cost_3w = st.number_input("Annual Battery Replacement - 3W (Thousands)", min_value=0.0, value=st.session_state.inputs["battery_replacement_cost_3w"] / 1000) * 1000
+        st.session_state.inputs["battery_replacement_cost_3w"] = battery_replacement_cost_3w
 
-        # Costs for all fleet types
+        # Delivery Logistics
         st.markdown("##### Delivery Logistics")
         num_vans_2w = st.number_input("Number of Vans - 2W", min_value=0, value=3)
         num_vans_3w = st.number_input("Number of Vans - 3W", min_value=0, value=3)
         daily_average_miles_2w = st.number_input("Average Daily Miles - 2W", min_value=0, value=65)
         daily_average_miles_3w = st.number_input("Average Daily Miles - 3W", min_value=0, value=90)
-        electricity_cost_per_km = st.number_input("Electricity Cost per km", min_value=0.0, value=2.58)
+        electricity_cost_per_km = st.number_input("Electricity Cost per km", min_value=0.0, value=st.session_state.inputs["electricity_cost_per_km"])
+        st.session_state.inputs["electricity_cost_per_km"] = electricity_cost_per_km
 
-        # Hour wages
+        # Worker Logistics
         st.markdown("##### Worker Logistics")
-        delivery_rev = st.number_input("Revenue per Delivery", min_value=0, value=50)
-        driver_wage_2w = st.number_input("Hourly Driver Wage - 2W", min_value=0, value=87)
-        driver_wage_3w = st.number_input("Hourly Driver Wage - 3W", min_value=0, value=107)
+        delivery_rev = st.number_input("Revenue per Delivery", min_value=0.0, value=st.session_state.inputs["delivery_rev"])
+        st.session_state.inputs["delivery_rev"] = delivery_rev
+        driver_wage_2w = st.number_input("Hourly Driver Wage - 2W", min_value=0.0, value=st.session_state.inputs["driver_wage_2w"])
+        st.session_state.inputs["driver_wage_2w"] = driver_wage_2w
+        driver_wage_3w = st.number_input("Hourly Driver Wage - 3W", min_value=0.0, value=st.session_state.inputs["driver_wage_3w"])
+        st.session_state.inputs["driver_wage_3w"] = driver_wage_3w
         hourly_delivery_2w = st.number_input("Deliveries per Hour - 2W", min_value=0, value=3)
         hourly_delivery_3w = st.number_input("Deliveries per Hour - 3W", min_value=0, value=5)
         work_hours = st.number_input("Work hours per day", min_value=0, value=8)
@@ -112,11 +179,10 @@ with tab1:
     with col[2]:
         # Calculating costs
         if fleet_type == "Captive Fleet":
-            # st.metric(label="Revenue", value=Revenue, delta="_", delta_color="normal")
-            # Cost of new vehicles
+            # Cost of new vehicles (Initial Costs)
             on_road_price_ev2w = vaqui_cost_ev2w - gov_subsidy_ev2w - state_incentive_ev2w
             on_road_price_ev3w = vaqui_cost_ev3w - gov_subsidy_ev3w - state_incentive_ev3w
-            init_cost = (on_road_price_ev2w * num_vans_2w + on_road_price_ev3w * num_vans_3w) * 1000
+            init_cost = (on_road_price_ev2w * num_vans_2w + on_road_price_ev3w * num_vans_3w)
             coulomb_init_cost = init_cost
 
             # Get annual revenue
@@ -132,7 +198,7 @@ with tab1:
                     driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue) + basic_insurance_2w + basic_insurance_3w + coulomb_partner_cost * (num_vans_2w + num_vans_3w)
         elif fleet_type == "DCO Fleet":
             # Calculate Initial Costs
-            init_cost = training_cost_per_driver * (num_vans_2w + num_vans_3w) * 1000 + vehicle_inspection_cost * (num_vans_2w + num_vans_3w) * 1000 + platform_operational_cost * 1000
+            init_cost = training_cost_per_driver * (num_vans_2w + num_vans_3w) + vehicle_inspection_cost * (num_vans_2w + num_vans_3w) + platform_operational_cost
             coulomb_init_cost = init_cost
 
             # Calculate Revenue
@@ -146,22 +212,22 @@ with tab1:
                 get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost, battery_replacement_cost_2w, battery_replacement_cost_3w,
                     driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue_gross)
-        	        + platform_operational_cost * 1000 # Platform operational cost (e.g., scheduling, system, customer service)
-                    + vehicle_inspection_cost * (num_vans_2w + num_vans_3w) * 1000  # Regular vehicle inspection cost
+        	        + platform_operational_cost # Platform operational cost (e.g., scheduling, system, customer service)
+                    + vehicle_inspection_cost * (num_vans_2w + num_vans_3w)  # Regular vehicle inspection cost
             )
             coulomb_annual_costs = (
                 get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost * 0.75, battery_replacement_cost_2w * 0.75, battery_replacement_cost_3w * 0.75,
                     driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue)
-                    + platform_operational_cost * 1000 # Platform operational cost (e.g., scheduling, system, customer service)
-                    + vehicle_inspection_cost * (num_vans_2w + num_vans_3w) * 1000  # Regular vehicle inspection cost
+                    + platform_operational_cost # Platform operational cost (e.g., scheduling, system, customer service)
+                    + vehicle_inspection_cost * (num_vans_2w + num_vans_3w)  # Regular vehicle inspection cost
                     + coulomb_partner_cost * (num_vans_2w + num_vans_3w)
             )
         elif fleet_type == "Contracted Fleet":
-            # Cost of contracted vehicles
+            # Cost of contracted vehicles (Initial Costs)
             on_road_price_ev2w = contract_cost_ev2w * 12 + basic_insurance_2w
             on_road_price_ev3w = contract_cost_ev3w * 12 + basic_insurance_3w
-            init_cost = (on_road_price_ev2w * num_vans_2w + on_road_price_ev3w * num_vans_3w) * 1000
+            init_cost = (on_road_price_ev2w * num_vans_2w + on_road_price_ev3w * num_vans_3w)
             coulomb_init_cost = init_cost
 
             # Calculate total revenue accounting for missed_deliveries
@@ -187,7 +253,6 @@ with tab1:
         coulomb_profits = [-coulomb_init_cost]
         coulomb_payback_period = None
 
-        # Calculating data for the graphs
         for year in range(1, operational_years + 1):
             previous_profit = profits[-1]
             previous_coulomb_profit = coulomb_profits[-1]
@@ -240,20 +305,24 @@ with tab1:
         # Display Metrics
         if using_coulomb:
             st.metric(label="Return on Investment (ROI)", value=f"{coulomb_roi:.2f}%", delta=f"{coulomb_roi - 100:.2f}%", delta_color="normal")
-            if payback_period:
+            if coulomb_payback_period and payback_period:
                 st.metric(label="Payback Period (Years)", value=f"{coulomb_payback_period:.2f}", delta=f"{coulomb_payback_period - payback_period:.2f}", delta_color="inverse")
+            elif coulomb_payback_period:
+                st.metric(label="Payback Period (Years)", value=f"{coulomb_payback_period:.2f}")
             else:
                 st.metric(label="Payback Period (Years)", value=f"Cannot with given years of operation")
             st.metric(label="Fleet Utilization", value=f"{coulomb_fleet_utilization:,.2f}", delta=f"{coulomb_fleet_utilization - fleet_utilization:.2f}", delta_color="normal")
-            st.metric(label="Cost Savings", value=f"{total_cost - coulomb_total_cost:,.2f}", delta=f"{total_cost - coulomb_total_cost:,.2f}", delta_color="normal")
+            st.metric(label="Cost Savings", value=f"{new_currency}{total_cost - coulomb_total_cost:,.2f}", delta=f"{total_cost - coulomb_total_cost:,.2f}", delta_color="normal")
         else:
             st.metric(label="Return on Investment (ROI)", value=f"{roi:.2f}%", delta=f"{roi - 100:.2f}%", delta_color="normal")
-            if payback_period:
+            if coulomb_payback_period and payback_period:
                 st.metric(label="Payback Period (Years)", value=f"{payback_period:.2f}", delta=f"{payback_period - coulomb_payback_period:.2f}", delta_color="inverse")
+            elif payback_period:
+                st.metric(label="Payback Period (Years)", value=f"{payback_period:.2f}")
             else:
                 st.metric(label="Payback Period (Years)", value=f"Cannot with given years of operation")
             st.metric(label="Fleet Utilization", value=f"{fleet_utilization:,.2f}", delta=f"{fleet_utilization - coulomb_fleet_utilization:.2f}", delta_color="normal")
-            st.metric(label="Cost Savings", value=f"0", delta=f"{coulomb_total_cost - total_cost:,.2f}", delta_color="normal")
+            st.metric(label="Cost Savings", value=f"{new_currency}0", delta=f"{coulomb_total_cost - total_cost:,.2f}", delta_color="normal")
 
     
     with col[1]:
@@ -268,21 +337,10 @@ with tab1:
         df = pd.DataFrame(data)
 
         st.markdown("### Cumulative Net Profits")
-        generate_plot(profits_data, payback_period)
+        generate_plot(profits_data, payback_period, new_currency)
         st.markdown("### Coulomb Benefits")
         st.text("By using Coulomb, operational costs (maintenance and battery) can be lowered by at least 25%")
         st.text("It also decreases the chance of battery/software issues by 50%, decreasing missed deliveries")
         st.text("Below, you can see the cumulative net profits if you were using Coulomb")
         st.markdown("### Cumulative Net Profits w/Coulomb")
-        generate_plot(coulomb_profits_data, coulomb_payback_period)
-
-with tab2:
-    st.markdown("### Spreadsheet")
-    st.text("Here is our spreadsheet of the costs and calculations.")
-    st.text("In each tab on the bottom, you can manipulate the inputs for a given year to change see how cost, revenue, and profits will change.")
-    st.text("On the Yearly Revenue tab, all operational inputs and downtime costs are displayed. We assume the values will not change over the years.")
-    st.text("We also provide a tab for sunk costs, including additional information for different types of fleets.")
-    st.text("We provide clear references for our number estimations in the references tab.")
-    st.text("As of now, our spreadsheet only models the first 5 years. However, the Metrics tab allows for more variability for inputs and logistics.")
-    url = "https://docs.google.com/spreadsheets/d/1o2Z9GmpwzgQJ2hTYIkDM3LvWJkwGQQFH7ETarsZGHK4/edit?usp=sharing"
-    st.markdown("Here is the [link to the spreadsheet](%s)" % url)
+        generate_plot(coulomb_profits_data, coulomb_payback_period, new_currency)
