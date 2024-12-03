@@ -129,8 +129,7 @@ with tab1:
                     driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue) + basic_insurance_2w + basic_insurance_3w
             coulomb_annual_costs = get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost * 0.75, battery_replacement_cost_2w * 0.75, battery_replacement_cost_3w * 0.75,
-                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue) + basic_insurance_2w + basic_insurance_3w +
-                    coulomb_partner_cost * (num_vans_2w + num_vans_3w)
+                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue) + basic_insurance_2w + basic_insurance_3w + coulomb_partner_cost * (num_vans_2w + num_vans_3w)
         elif fleet_type == "DCO Fleet":
             # Calculate Initial Costs
             init_cost = training_cost_per_driver * (num_vans_2w + num_vans_3w) * 1000 + vehicle_inspection_cost * (num_vans_2w + num_vans_3w) * 1000 + platform_operational_cost * 1000
@@ -175,8 +174,7 @@ with tab1:
                     driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue) + init_cost
             coulomb_annual_costs = get_annual_cost(daily_average_miles_2w, num_vans_2w, daily_average_miles_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost * 0.75, battery_replacement_cost_2w * 0.75, battery_replacement_cost_3w * 0.75,
-                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue) + init_cost +
-                    coulomb_partner_cost * (num_vans_2w + num_vans_3w)
+                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue) + init_cost + coulomb_partner_cost * (num_vans_2w + num_vans_3w)
 
         # Calculating data for revenue, costs, profits, and payback_period
         years = list(range(operational_years + 1))
