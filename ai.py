@@ -36,7 +36,6 @@ if "inputs" not in st.session_state:
         "contract_cost_ev2w": 1 * 1000,
         "contract_cost_ev3w": 4 * 1000,
         "platform_operational_cost": 0 * 1000,
-        "training_cost_per_driver": 0 * 1000,
         "vehicle_inspection_cost": 0 * 1000,
         "basic_insurance_2w": 5 * 1000,
         "basic_insurance_3w": 15 * 1000,
@@ -125,14 +124,18 @@ with tab1:
 
         elif fleet_type == "DCO Fleet":
             st.markdown("##### DCO Logistics")
-            # management_fee_percentage = st.number_input("Management Ownership (%)", min_value=0, max_value=100, value=90)
-            # driver_share_percentage = 100 - management_fee_percentage # Driver's share of gross revenue
-            # platform_operational_cost = st.number_input("Annual Platform Operational Cost (Thousands)", min_value=0.0, value=st.session_state.inputs["platform_operational_cost"] / 1000) * 1000 # Annual operational cost for managing the platform, such as support systems, customer service, etc.
-            # st.session_state.inputs["platform_operational_cost"] = platform_operational_cost
-            # training_cost_per_driver = st.number_input("Training Cost per Driver (Thousands)", min_value=0.0, value=st.session_state.inputs["training_cost_per_driver"] / 1000) * 1000 # Cost for training each driver, covering onboarding and skill development
-            # st.session_state.inputs["training_cost_per_driver"] = training_cost_per_driver
-            # vehicle_inspection_cost = st.number_input("Annual Vehicle Inspection Cost per Vehicle (Thousands)", min_value=0.0, value=st.session_state.inputs["vehicle_inspection_cost"] / 1000) * 1000 # Annual cost for regular vehicle inspections to ensure safety and compliance
-            # st.session_state.inputs["vehicle_inspection_cost"] = vehicle_inspection_cost
+            vaqui_cost_ev2w = st.number_input("Vehicle Acquisition - 2W (Thousands)", min_value=0.0, value=st.session_state.inputs["vaqui_cost_ev2w"] / 1000) * 1000
+            st.session_state.inputs["vaqui_cost_ev2w"] = vaqui_cost_ev2w
+            vaqui_cost_ev3w = st.number_input("Vehicle Acquisition - 3W (Thousands)", min_value=0.0, value=st.session_state.inputs["vaqui_cost_ev3w"] / 1000) * 1000
+            st.session_state.inputs["vaqui_cost_ev3w"] = vaqui_cost_ev3w
+            gov_subsidy_ev2w = st.number_input("Government Subsidy - 2W (Thousands)", min_value=0.0, value=st.session_state.inputs["gov_subsidy_ev2w"] / 1000) * 1000
+            st.session_state.inputs["gov_subsidy_ev2w"] = gov_subsidy_ev2w
+            gov_subsidy_ev3w = st.number_input("Government Subsidy - 3W (Thousands)", min_value=0.0, value=st.session_state.inputs["gov_subsidy_ev3w"] / 1000) * 1000
+            st.session_state.inputs["gov_subsidy_ev3w"] = gov_subsidy_ev3w
+            state_incentive_ev2w = st.number_input("State-level Incentive - 2W (Thousands)", min_value=0.0, value=st.session_state.inputs["state_incentive_ev2w"] / 1000) * 1000
+            st.session_state.inputs["state_incentive_ev2w"] = state_incentive_ev2w
+            state_incentive_ev3w = st.number_input("State-level Incentive - 3W (Thousands)", min_value=0.0, value=st.session_state.inputs["state_incentive_ev3w"] / 1000) * 1000
+            st.session_state.inputs["state_incentive_ev3w"] = state_incentive_ev3w
 
         # Additional Logistics consistent across all types of fleets
         basic_insurance_2w = st.number_input("Basic Insurance - 2W (Thousands)", min_value=0.0, value=st.session_state.inputs["basic_insurance_2w"] / 1000) * 1000
@@ -194,35 +197,31 @@ with tab1:
                     driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue, amortization_cost, basic_insurance_2w, basic_insurance_3w) + coulomb_partner_cost * (num_vans_2w + num_vans_3w)
         elif fleet_type == "DCO Fleet":
             # Calculate Initial Costs
-            init_cost = training_cost_per_driver * (num_vans_2w + num_vans_3w) + vehicle_inspection_cost * (num_vans_2w + num_vans_3w) + platform_operational_cost
+            on_road_price_ev2w = vaqui_cost_ev2w - gov_subsidy_ev2w - state_incentive_ev2w
+            on_road_price_ev3w = vaqui_cost_ev3w - gov_subsidy_ev3w - state_incentive_ev3w
+            init_cost = (on_road_price_ev2w * num_vans_2w + on_road_price_ev3w * num_vans_3w)
             coulomb_init_cost = init_cost
 
             # Calculate Revenue
-            annual_revenue_gross = get_annual_revenue(battery_issues, software_issues, num_vans_2w, num_vans_3w, rev_km, work_days, daily_average_km_2w, daily_average_km_3w)
-            annual_revenue = annual_revenue_gross * (management_fee_percentage / 100)   # Company revenue after driver share
-            coulomb_annual_revenue_gross = get_annual_revenue(battery_issues * 0.5, software_issues * 0.5, num_vans_2w, num_vans_3w, rev_km, work_days, daily_average_km_2w, daily_average_km_3w)
-            coulomb_annual_revenue = coulomb_annual_revenue_gross * (management_fee_percentage / 100)  # Company revenue after driver share
+            annual_revenue = get_annual_revenue(battery_issues, software_issues, num_vans_2w, num_vans_3w, rev_km, work_days, daily_average_km_2w, daily_average_km_3w)
+            coulomb_annual_revenue = get_annual_revenue(battery_issues * 0.5, software_issues * 0.5, num_vans_2w, num_vans_3w, rev_km, work_days, daily_average_km_2w, daily_average_km_3w)
 
             # Calculate Annual Cost
             annual_costs = (
                 get_annual_cost(daily_average_km_2w, num_vans_2w, daily_average_km_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost, battery_replacement_cost_2w, battery_replacement_cost_3w,
-                    driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue_gross, 0, 0, 0)
-        	        + platform_operational_cost # Platform operational cost (e.g., scheduling, system, customer service)
-                    + vehicle_inspection_cost * (num_vans_2w + num_vans_3w)  # Regular vehicle inspection cost
+                    driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue, 0, 0, 0)
             )
             coulomb_annual_costs = (
                 get_annual_cost(daily_average_km_2w, num_vans_2w, daily_average_km_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost * 0.75, battery_replacement_cost_2w * 0.75, battery_replacement_cost_3w * 0.75,
                     driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue, 0, 0, 0)
-                    + platform_operational_cost # Platform operational cost (e.g., scheduling, system, customer service)
-                    + vehicle_inspection_cost * (num_vans_2w + num_vans_3w)  # Regular vehicle inspection cost
                     + coulomb_partner_cost * (num_vans_2w + num_vans_3w)
             )
         elif fleet_type == "Contracted Fleet":
             # Cost of contracted vehicles (Initial Costs)
-            on_road_price_ev2w = contract_cost_ev2w * 12 + basic_insurance_2w
-            on_road_price_ev3w = contract_cost_ev3w * 12 + basic_insurance_3w
+            on_road_price_ev2w = contract_cost_ev2w * 12
+            on_road_price_ev3w = contract_cost_ev3w * 12
             init_cost = (on_road_price_ev2w * num_vans_2w + on_road_price_ev3w * num_vans_3w)
             coulomb_init_cost = init_cost
 
@@ -233,10 +232,10 @@ with tab1:
             # Calculate costs
             annual_costs = get_annual_cost(daily_average_km_2w, num_vans_2w, daily_average_km_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost, battery_replacement_cost_2w, battery_replacement_cost_3w,
-                    driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue, 0, 0, 0) + init_cost
+                    driver_wage_2w, driver_wage_3w, battery_issues, software_issues, annual_revenue, 0, basic_insurance_2w, basic_insurance_3w) + init_cost
             coulomb_annual_costs = get_annual_cost(daily_average_km_2w, num_vans_2w, daily_average_km_3w, num_vans_3w, electricity_cost_per_km,
                     work_hours, work_days, annual_maintenance_cost * 0.75, battery_replacement_cost_2w * 0.75, battery_replacement_cost_3w * 0.75,
-                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue, 0, 0, 0) + init_cost + coulomb_partner_cost * (num_vans_2w + num_vans_3w)
+                    driver_wage_2w, driver_wage_3w, battery_issues * 0.5, software_issues * 0.5, coulomb_annual_revenue, 0, basic_insurance_2w, basic_insurance_3w) + init_cost + coulomb_partner_cost * (num_vans_2w + num_vans_3w)
 
         # Calculating data for revenue, costs, profits, and payback_period
         years = list(range(operational_years + 1))
