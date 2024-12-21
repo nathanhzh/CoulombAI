@@ -113,6 +113,7 @@ with tab1:
             st.session_state.inputs["state_incentive_ev2w"] = state_incentive_ev2w
             state_incentive_ev3w = st.number_input("State-level Incentive - 3W (Thousands)", min_value=0.0, value=st.session_state.inputs["state_incentive_ev3w"] / 1000) * 1000
             st.session_state.inputs["state_incentive_ev3w"] = state_incentive_ev3w
+            manager_ownership_factor = st.number_input("Manager Ownership Percentage", min_value=0, max_value=100, value=80) / 100
 
         elif fleet_type == "Contracted Fleet":
             st.markdown("##### Contract Logistics")
@@ -184,8 +185,8 @@ with tab1:
             coulomb_init_cost = init_cost
 
             # Get annual revenue
-            annual_revenue = get_annual_revenue(battery_issues, software_issues, num_vans_2w, num_vans_3w, rev_km, work_days, daily_average_km_2w, daily_average_km_3w)
-            coulomb_annual_revenue = get_annual_revenue(battery_issues * 0.5, software_issues * 0.5, num_vans_2w, num_vans_3w, rev_km, work_days, daily_average_km_2w, daily_average_km_3w)
+            annual_revenue = get_annual_revenue(battery_issues, software_issues, num_vans_2w, num_vans_3w, rev_km, work_days, daily_average_km_2w, daily_average_km_3w) * manager_ownership_factor
+            coulomb_annual_revenue = get_annual_revenue(battery_issues * 0.5, software_issues * 0.5, num_vans_2w, num_vans_3w, rev_km, work_days, daily_average_km_2w, daily_average_km_3w) * manager_ownership_factor
 
             # Get annual costs
             amortization_cost = (on_road_price_ev2w * num_vans_2w + on_road_price_ev3w + num_vans_3w) / operational_years
